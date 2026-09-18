@@ -3644,7 +3644,10 @@ inline RecompileStats EmitProject(const std::string& mod, const u8* text, size_t
        << " PRIVATE SUYU_HOSTED_RECOMP=1 RECOMP_STATIC_MODULE=1"
        << " g_module_base=g_module_base_" << mod
        << " recomp_lookup=recomp_lookup_" << mod
+    << " recomp_build_index=recomp_build_index_" << mod
+    << " _recomp_index_view=_recomp_index_view_" << mod
        << " recomp_image_lookup=recomp_image_lookup_" << mod
+    << " recomp_image_index=recomp_image_index_" << mod
        << " recomp_image_set_base=recomp_image_set_base_" << mod
        << " recomp_image_entry=recomp_image_entry_" << mod << ")\n";
 
@@ -4220,13 +4223,6 @@ int recomp_save_init(GuestContext* c, const char* exe_path) {
   printf("[recomp] Save directory: %s\n",c->save_dir);
   return 1;
 }
-
-int recomp_save_write(GuestContext* c, const char* name, const void* data, uint64_t size) {
-  char path[1024];
-  snprintf(path,sizeof path,"%s%c%s",c->save_dir,PATH_SEP,name);
-  /* Ensure parent dirs exist */
-  char parent[1024]; snprintf(parent,sizeof parent,"%s",path);
-  char* sl=strrchr(parent,PATH_SEP); if(!sl) sl=strrchr(parent,'/'); if(sl)*sl=0;
 )RT") + R"RT(
 /* AES S-box, built once on first use.
    S(x) = affine(x^-1), and x^-1 is x^254 because x^255 == 1 for non-zero x.
@@ -4264,7 +4260,14 @@ const uint8_t* recomp_aes_sbox(int inverse){
   }
   return inverse ? inv : fwd;
 }
-)RT" + R"RT(  mkpath(parent);
+)RT" + R"RT(
+int recomp_save_write(GuestContext* c, const char* name, const void* data, uint64_t size) {
+    char path[1024];
+    snprintf(path,sizeof path,"%s%c%s",c->save_dir,PATH_SEP,name);
+    /* Ensure parent dirs exist */
+    char parent[1024]; snprintf(parent,sizeof parent,"%s",path);
+    char* sl=strrchr(parent,PATH_SEP); if(!sl) sl=strrchr(parent,'/'); if(sl)*sl=0;
+    mkpath(parent);
   FILE* f=fopen(path,"wb");
   if(!f){fprintf(stderr,"[recomp] save write failed: %s\n",path); return 0;}
   fwrite(data,1,(size_t)size,f); fclose(f);

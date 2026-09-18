@@ -674,7 +674,7 @@ int main(int argc, char** argv) {
     // to find on disk, nothing to load, and no version skew between the exe and
     // its modules.
 #ifdef SUYU_CMD_STATIC_RECOMP
-    {
+    if (std::getenv("SUYU_ENABLE_STATIC_RECOMP") != nullptr) {
         unsigned count = 0;
         const SuyuRecompStaticModule* mods = suyu_recomp_static_modules(&count);
         for (unsigned i = 0; i < count; ++i) {
